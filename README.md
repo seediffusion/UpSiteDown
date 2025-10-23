@@ -73,7 +73,7 @@ All your program settings are stored inside a file called opts.ini, which is gen
 
 ### Hotkeys
 
-There are 12 hotkeys you can use in UpSiteDown. Of course, with every Seediffusion program that uses hotkeys, you have the power to modify these hotkeys at any time. These hotkeys are global, meaning they can be used from anywhere within the Windows OS.
+There are 14 hotkeys you can use in UpSiteDown. Of course, with every Seediffusion program that uses hotkeys, you have the power to modify these hotkeys at any time. These hotkeys are global, meaning they can be used from anywhere within the Windows OS.
 
 *   Windows+Shift+Control+W: get all the websites being monitored.
 *   Windows+Shift+Control+U: get the sites that are up.
@@ -85,6 +85,8 @@ There are 12 hotkeys you can use in UpSiteDown. Of course, with every Seediffusi
 *   Windows+Shift+Control+P: Check for updates.
 *   Windows+Shift+Control+V: View outage report file.
 *   Windows+Shift+Control+E: delete outage report file.
+* Windows + Shift + Alt + K: Set your API key for Prowl notifications.
+* Windows + Shift + Alt + L: Toggle Prowl notifications on and off.
 *   Windows+Shift+Control+Y: restart the program. Useful if your sites or settings files have been modified.
 *   Windows+Shift+Control+X. Kill the program completely.
 
