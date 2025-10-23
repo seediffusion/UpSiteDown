@@ -133,6 +133,41 @@ Starting with UpSiteDown V2 Theakston, you can use the program to monitor other 
 1. Starting a URL in the sites.txt file with icmp:// will cause UpSiteDown to monitor the server by sending ping requests, similar to how you would run the ping command to send a ping to a host to check if it's working.
 2. URLs that start with tcp:// will cause the program to try to connect to the server on any given port via a standard TCP request. For example, tcp://hostname_or_IP_address:25255 means UpSiteDown will monitor that server on port 25255.
 
+## On the Prowl
+
+As well of notifying you of site status changes via speech and braille, UpSiteDown Theakston has the ability to send push notifications to your iOS device via the [Prowl](https://www.prowlapp.com) service. This means you can get notified of status changes even if you're away from the machine on which UpSiteDown is running.
+Both the Prowl app and website are very accessible with Screen readers and Prowl is very easy to set up and use.
+
+### Creating your Prowl account
+
+1. Visit the [Prowl registration page](https://www.prowlapp.com/register.php).
+2. Fill in your username, your password, and optionally your email address, then click Register.
+
+### Using Prowl with UpSiteDown
+
+UpSiteDown uses Prowl's free-to-use API, so you will need an API key for UpSiteDown to authenticate with Prowl.
+
+### Getting an API key
+
+1. [Log into your Prowl account](https://www.prowlapp.com/login.php)
+2. Go to the [API keys page](https://www.prowlapp.com/api_settings.php).
+3. Under current API keys, you will see all the API keys you have generated. To get a new API key, enter an optional note that will help you identify the key, then click Generate Key.
+4. Find the long string of letters and numbers that is your newly generated API key, press Shift + Down Arrow to select it, and Control + C to copy it to the clipboard.
+
+### Connecting UpSiteDown to Prowl
+
+1. Launch the program if it isn't already running.
+2. Press Windows + Shift + Alt + K, or your chosen hotkey, to bring up a text box where you can paste your Prowl API key. If you're not focused on this text box right away, Alt Tab until you find it.
+3. Paste your API key into the box and hit Enter.
+4. Press Windows + Shift + Alt + L, or your chosen Prowl toggle hotkey, to turn on Prowl notifications. You cannot enable Prowl notifications without an API key, so UpSiteDown will first verify your API key with Prowl before enabling the feature.
+
+### Setting up Prowl on your iOS device
+
+1. Buy the Prowl iOS app from the app store for £2.99.
+2. Launch the app and log in with your Prowl account credentials.
+3. Allow Prowl to send notifications when prompted
+4. You are now ready to receive push notifications to your device via Prowl!
+
 ## Supporting Seediffusion
 
 Although UpSiteDown and all other Seediffusion programs are free of charge, donations and contributions are appreciated, as they help keep Seediffusion alive and support the development of present and future Seediffusion projects. Here are the ways you can give your support:

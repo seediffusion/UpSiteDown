@@ -9,6 +9,7 @@ import threading
 import time
 import wx
 import zipfile
+import pyprowl
 from datetime import datetime
 import accessible_output2.outputs.auto, accessible_output2.outputs.sapi5
 from sound_lib import stream
@@ -41,10 +42,14 @@ if not os.path.exists("opts.ini"):
     SetFile.set("clear_outs", "win+shift+control+e")
     SetFile.set("restart", "win+shift+control+y")
     SetFile.set("exit", "win+shift+control+x")
+    SetFile.set("toggle_prowl", "win+shift+alt+l")
+    SetFile.set("set_prowl_key", "win+shift+alt+k")
     SetFile.set("outmode", "1")
     SetFile.set("sleep", "60")
     SetFile.set("timeout", "15")
     SetFile.set("sounds", "on")
+    SetFile.set("prowl", "off")
+    SetFile.set("prowl_key", "")
     SetFile.save()
 else:
     SetFile = EasySettings("opts.ini")
@@ -63,10 +68,19 @@ else:
         SetFile.setsave("toggle_sounds", "win+shift+control+a")
     if not SetFile.has_option("sounds"):
         SetFile.setsave("sounds", "on")
+    if not SetFile.has_option("toggle_prowl"):
+        SetFile.setsave("toggle_prowl", "win+shift+alt+l")
+    if not SetFile.has_option("set_prowl_key"):
+        SetFile.setsave("set_prowl_key", "win+shift+alt+k")
+    if not SetFile.has_option("prowl"):
+        SetFile.setsave("prowl", "off")
+    if not SetFile.has_option("prowl_key"):
+        SetFile.setsave("prowl_key", "")
 if SetFile.get("outmode") == "1":
     out = accessible_output2.outputs.sapi5.SAPI5()
 elif SetFile.get("outmode") == "2" or SetFile.get("outmode") == "3" or SetFile.get("outmode") == "4":
     out = accessible_output2.outputs.auto.Auto()
+p = pyprowl.Prowl(SetFile.get("prowl_key"))
 if not os.path.exists("sites.txt"):
     setsite = wx.GetTextFromUser("Enter a website URL for your sites.txt file, such as www.mysite.com, and press Enter. You can add more sites to this file at any time by pressing " + SetFile.get("view_sites") + ". Leave blank to exit the program.", "First time setup")
     if setsite == "":
@@ -92,6 +106,8 @@ class UpSiteDown(wx.Frame):
     def __init__(self):
         super().__init__(None, title="UpSiteDown", size=(800, 600))
         self.hndlr = WXKeyboardHandler(self)
+        self.hndlr.register_key(SetFile.get("toggle_prowl"), self.tglprl)
+        self.hndlr.register_key(SetFile.get("set_prowl_key"), self.setprl)
         self.hndlr.register_key(SetFile.get("get_sites"), self.getsites)
         self.hndlr.register_key(SetFile.get("toggle_outmode"), self.tglbrl)
         self.hndlr.register_key(SetFile.get("toggle_sounds"), self.tglsnd)
@@ -189,7 +205,7 @@ class UpSiteDown(wx.Frame):
     def upcheck(self):
         global checked
         global NV
-        CV = "1.8"
+        CV = "2.0"
         tout("Checking for updates...")
         try:
             NV_r = requests.get("https://api.github.com/repos/seediffusion/UpSiteDown/releases/latest").json().get("tag_name")
@@ -270,7 +286,27 @@ class UpSiteDown(wx.Frame):
             tout("Outage report deleted")
         else:
             tout("Can't delete outage report file because it doesn't exist.")
-
+    def tglprl(self):
+        if SetFile.get("prowl") == "off":
+            tout("Verifying Prowl key...")
+            try:
+                p.verify_key()
+                SetFile.setsave("prowl", "on")
+                tout("Prowl on")
+            except Exception:
+                tout("Prowl was not enabled because your Prowl key could not be verified.")
+        elif SetFile.get("prowl") == "on":
+            SetFile.setsave("prowl", "off")
+            tout("Prowl off")
+    def setprl(self):
+        global p
+        prlkey = wx.GetTextFromUser("Enter your Prowl API key", "Enter Prowl key")
+        SetFile.setsave("prowl_key", prlkey)
+        p = pyprowl.Prowl(SetFile.get("prowl_key"))
+        tout("Prowl key set")
+        if SetFile.get("prowl") == "on":
+            SetFile.setsave("prowl", "off")
+            self.tglprl()
 def human_readable_downtime(start_time, end_time):
     delta = end_time - start_time
     seconds = delta.total_seconds()
@@ -401,6 +437,8 @@ async def check_websites(file_path):
                             downtime = human_readable_downtime(start_time, end_time)
                             
                             tout(f"{friendly_url} is back up after being down for {downtime}.")
+                            if SetFile.get("prowl") == "on":
+                                p.notify(event = "Site back up", description = f"{friendly_url} is back up after being down for {downtime}.", priority = 0, appName = "UpSiteDown")
                             
                             with open("outage.txt", "a") as report:
                                 report.write(f"Service Restored: {end_time.strftime('%A, %d %B, %Y at %I:%M %p')}\n")
@@ -416,7 +454,8 @@ async def check_websites(file_path):
                         if url in ups:
                             down_status_change = True
                             tout(f"{friendly_url} is down! {e}")
-                            
+                            if SetFile.get("prowl") == "on":
+                                p.notify(event = "Site down", description = f"{friendly_url} is down! {e}", priority = 2, appName = "UpSiteDown")
                             downs.add(url)
                             ups.remove(url)
                             
