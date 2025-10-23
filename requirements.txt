@@ -1,0 +1,9 @@
+git+https://github.com/accessibleapps/keyboard_handler.git
+aiohttp
+requests
+wxpython
+accessible_output2
+git+https://github.com/samtupy/sound_lib_macos_fixes.git
+easysettings[all]
+pyinstaller
+pyinstaller_versionfile
