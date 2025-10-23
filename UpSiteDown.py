@@ -19,7 +19,7 @@ import socket # Added for TCP/IP error handling
 
 if os.path.exists("unzip.exe"):
     os.remove("unzip.exe")
-t = subprocess.check_output(["tasklist"], shell=True).decode()
+t = subprocess.check_output(["tasklist"], shell=True, creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0).decode()
 if t.count("UpSiteDown.exe") > 1:
     subprocess.Popen("prockill.exe")
 
@@ -169,6 +169,7 @@ class UpSiteDown(wx.Frame):
         [tout(get_friendly_url(up)) for up in ups]
 
     def downsites(self):
+        # FIX 3: Restored more descriptive reporting
         if len(downs) == 1:
             noun = "site"
             be = "is"
@@ -208,13 +209,14 @@ class UpSiteDown(wx.Frame):
         CV = "2.0"
         tout("Checking for updates...")
         try:
-            NV_r = requests.get("https://api.github.com/repos/seediffusion/UpSiteDown/releases/latest").json().get("tag_name")
-            if NV_r.status_code != 200:
+            # FIX 2: Make only one API call for efficiency
+            response = requests.get("https://api.github.com/repos/seediffusion/UpSiteDown/releases/latest")
+            if response.status_code != 200:
                 if SetFile.get("sounds") == "on":
                     errsnd.play()
-                tout(f"Error! The server returned HTTP error {NV_r.status_code}.")
+                tout(f"Error! The server returned HTTP error {response.status_code}.")
             else:
-                NV = requests.get("https://api.github.com/repos/seediffusion/UpSiteDown/releases/latest").json().get("tag_name")
+                NV = response.json().get("tag_name")
                 checked = True
                 if NV != CV:
                     self.updown()
@@ -348,19 +350,20 @@ async def check_websites(file_path):
         # Feature 1: ICMP Ping
         if url.startswith("icmp://"):
             host = url[7:]
+            
+            subprocess_kwargs = {
+                "stdout": asyncio.subprocess.PIPE,
+                "stderr": asyncio.subprocess.PIPE
+            }
             if sys.platform == 'win32':
-                # Windows ping timeout is in milliseconds
                 timeout_ms = str(timeout_sec * 1000)
                 command = ['ping', '-n', '1', '-w', timeout_ms, host]
+                # FIX 1: Add the flag to hide the console window on Windows
+                subprocess_kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
             else:
-                # Linux/macOS ping timeout is in seconds
                 command = ['ping', '-c', '1', '-W', str(timeout_sec), host]
             try:
-                proc = await asyncio.create_subprocess_exec(
-                    *command,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
+                proc = await asyncio.create_subprocess_exec(*command, **subprocess_kwargs)
                 await proc.communicate()
                 return (url, True) if proc.returncode == 0 else (url, False, "Ping failed (Host unreachable or timed out)")
             except FileNotFoundError:
