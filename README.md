@@ -126,6 +126,13 @@ Outage reports contain the following information:
 *   Reason: why the site was declared down.
 *   Outage duration: how long the site was down for.
 
+## Non-website monitoring
+
+Starting with UpSiteDown V2 Theakston, you can use the program to monitor other types of servers that aren't websites, such as FTP servers, game servers, or any other servers that don't use web ports. You can do this in 2 ways.
+
+1. Starting a URL in the sites.txt file with icmp:// will cause UpSiteDown to monitor the server by sending ping requests, similar to how you would run the ping command to send a ping to a host to check if it's working.
+2. URLs that start with tcp:// will cause the program to try to connect to the server on any given port via a standard TCP request. For example, tcp://hostname_or_IP_address:25255 means UpSiteDown will monitor that server on port 25255.
+
 ## Supporting Seediffusion
 
 Although UpSiteDown and all other Seediffusion programs are free of charge, donations and contributions are appreciated, as they help keep Seediffusion alive and support the development of present and future Seediffusion projects. Here are the ways you can give your support:
