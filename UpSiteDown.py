@@ -19,7 +19,13 @@ import socket # Added for TCP/IP error handling
 
 if os.path.exists("unzip.exe"):
     os.remove("unzip.exe")
-t = subprocess.check_output(["tasklist"], shell=True, creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0).decode()
+# Hide the console window for the tasklist check on Windows
+startupinfo = None
+if sys.platform == "win32":
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+t = subprocess.check_output(["tasklist"], shell=True, startupinfo=startupinfo).decode()
 if t.count("UpSiteDown.exe") > 1:
     subprocess.Popen("prockill.exe")
 
@@ -90,6 +96,9 @@ if not os.path.exists("sites.txt"):
 s = requests.session()
 running = True
 checked = False
+# Globals to hold the loop and shutdown event for cross-thread communication
+loop = None
+shutdown_event = None
 
 def get_friendly_url(url):
     """Removes protocol for user-friendly display."""
@@ -169,7 +178,6 @@ class UpSiteDown(wx.Frame):
         [tout(get_friendly_url(up)) for up in ups]
 
     def downsites(self):
-        # FIX 3: Restored more descriptive reporting
         if len(downs) == 1:
             noun = "site"
             be = "is"
@@ -185,9 +193,15 @@ class UpSiteDown(wx.Frame):
     def shutdown(self):
         global running
         tout("Exiting")
-        time.sleep(1.5)
         running = False
-        sys.exit()
+        # THIS IS THE FIX: This thread-safe call sets the event, which will
+        # immediately interrupt the `await shutdown_event.wait()` in the other thread.
+        if loop and shutdown_event:
+            loop.call_soon_threadsafe(shutdown_event.set)
+        # Give the message time to be spoken before the app closes
+        time.sleep(1.5)
+        # Use the proper wxPython way to close the application
+        self.Close()
 
     def restart(self):
         try:
@@ -206,10 +220,9 @@ class UpSiteDown(wx.Frame):
     def upcheck(self):
         global checked
         global NV
-        CV = "2.0"
+        CV = "2.0.5"
         tout("Checking for updates...")
         try:
-            # FIX 2: Make only one API call for efficiency
             response = requests.get("https://api.github.com/repos/seediffusion/UpSiteDown/releases/latest")
             if response.status_code != 200:
                 if SetFile.get("sounds") == "on":
@@ -255,7 +268,10 @@ class UpSiteDown(wx.Frame):
                         zfile.extractall(".")
                     subprocess.Popen("updater.exe")
                     running = False
-                    sys.exit()
+                    # Signal shutdown to the asyncio loop as well
+                    if loop and shutdown_event:
+                        loop.call_soon_threadsafe(shutdown_event.set)
+                    self.Close()
                 else:
                     if SetFile.get("sounds") == "on":
                         errsnd.play()
@@ -334,7 +350,7 @@ ups = set()
 downs = set()
 status_dict = {}
 
-async def check_websites(file_path):
+async def check_websites(file_path, shutdown_event):
     with open(file_path, 'r') as file:
         sites = [url.strip() for url in file.readlines() if url.strip()]
     
@@ -358,7 +374,6 @@ async def check_websites(file_path):
             if sys.platform == 'win32':
                 timeout_ms = str(timeout_sec * 1000)
                 command = ['ping', '-n', '1', '-w', timeout_ms, host]
-                # FIX 1: Add the flag to hide the console window on Windows
                 subprocess_kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
             else:
                 command = ['ping', '-c', '1', '-W', str(timeout_sec), host]
@@ -425,7 +440,6 @@ async def check_websites(file_path):
 
                 for result in results:
                     if isinstance(result, Exception):
-                        # Handle unexpected errors in fetch_status itself
                         tout(f"An unexpected error occurred during a check: {result}")
                         continue
 
@@ -441,8 +455,10 @@ async def check_websites(file_path):
                             
                             tout(f"{friendly_url} is back up after being down for {downtime}.")
                             if SetFile.get("prowl") == "on":
-                                p.notify(event = "Site back up", description = f"{friendly_url} is back up after being down for {downtime}.", priority = 0, appName = "UpSiteDown")
-                            
+                                try:
+                                    p.notify(event = "Site back up", description = f"{friendly_url} is back up after being down for {downtime}.", priority = 0, appName = "UpSiteDown")
+                                except Exception:
+                                    pass
                             with open("outage.txt", "a") as report:
                                 report.write(f"Service Restored: {end_time.strftime('%A, %d %B, %Y at %I:%M %p')}\n")
                                 report.write(f"Affected site: {url}\n")
@@ -458,7 +474,10 @@ async def check_websites(file_path):
                             down_status_change = True
                             tout(f"{friendly_url} is down! {e}")
                             if SetFile.get("prowl") == "on":
-                                p.notify(event = "Site down", description = f"{friendly_url} is down! {e}", priority = 2, appName = "UpSiteDown")
+                                try:
+                                    p.notify(event = "Site down", description = f"{friendly_url} is down! {e}", priority = 2, appName = "UpSiteDown")
+                                except Exception:
+                                    pass
                             downs.add(url)
                             ups.remove(url)
                             
@@ -476,20 +495,32 @@ async def check_websites(file_path):
                 if down_status_change and SetFile.get("sounds") == "on":
                     downsnd.play()
                 
-                await asyncio.sleep(int(SetFile.get("sleep")))
+                # THIS IS THE FIX: Instead of a blocking sleep, we wait on an event with a timeout.
+                try:
+                    # This will wait for the sleep duration OR until shutdown_event.set() is called.
+                    await asyncio.wait_for(shutdown_event.wait(), timeout=int(SetFile.get("sleep")))
+                except asyncio.TimeoutError:
+                    # This is the normal path. The timeout was reached, so we continue to the next check cycle.
+                    pass
 
     await check_sites()
 
-def run_asyncio(loop):
+def run_asyncio(loop, shutdown_event):
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(check_websites('sites.txt'))
+    loop.run_until_complete(check_websites('sites.txt', shutdown_event))
 
 if __name__ == '__main__':
     program = UpSiteDown()
     tout("Site monitoring is ready")
     loop = asyncio.new_event_loop()
-    t = threading.Thread(target=run_asyncio, args=(loop,))
+    shutdown_event = asyncio.Event()
+    
+    t = threading.Thread(target=run_asyncio, args=(loop, shutdown_event))
     t.start()
     app.MainLoop()
+    
+    # After the app closes, ensure the background thread is also finished.
     running = False
-    # The asyncio loop will exit on its own after running is False. No need for t.join() in this setup.
+    if not shutdown_event.is_set():
+        loop.call_soon_threadsafe(shutdown_event.set)
+    t.join()
