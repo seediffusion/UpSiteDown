@@ -137,7 +137,7 @@ Starting with UpSiteDown V2 Theakston, you can use the program to monitor other 
 
 ## On the Prowl
 
-As well of notifying you of site status changes via speech and braille, UpSiteDown Theakston has the ability to send push notifications to your iOS device via the [Prowl](https://www.prowlapp.com) service. This means you can get notified of status changes even if you're away from the machine on which UpSiteDown is running.
+As well as notifying you of site status changes via speech and braille, UpSiteDown Theakston has the ability to send push notifications to your iOS device via the [Prowl](https://www.prowlapp.com) service. This means you can get notified of status changes even if you're away from the machine on which UpSiteDown is running.
 Both the Prowl app and website are very accessible with Screen readers and Prowl is very easy to set up and use.
 
 ### Creating your Prowl account
