@@ -54,7 +54,7 @@ python UpSiteDown.py
 
 ### Compiled
 
-The highest version of UpSiteDown is V 1.8, compiled on Monday, November 4th, 2024.
+The highest version of UpSiteDown is Theakston V 2.0.5, compiled on Friday, October 24th, 2025.
 The below link will allow you to download the latest pre-compiled release.
 [UpSiteDownload](https://github.com/seediffusion/UpSiteDown/releases/latest/download/UpSiteDown.zip)
 
