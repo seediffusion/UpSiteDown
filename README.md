@@ -54,7 +54,7 @@ python UpSiteDown.py
 
 ### Compiled
 
-The highest version of UpSiteDown is Theakston V 2.0.5, compiled on Friday, October 24th, 2025.
+The highest version of UpSiteDown is Theakston V 2.1, compiled on Saturday, October 25th, 2025.
 The below link will allow you to download the latest pre-compiled release.
 [UpSiteDownload](https://github.com/seediffusion/UpSiteDown/releases/latest/download/UpSiteDown.zip)
 
@@ -73,7 +73,7 @@ All your program settings are stored inside a file called opts.ini, which is gen
 
 ### Hotkeys
 
-There are 14 hotkeys you can use in UpSiteDown. Of course, with every Seediffusion program that uses hotkeys, you have the power to modify these hotkeys at any time. These hotkeys are global, meaning they can be used from anywhere within the Windows OS.
+There are 16 hotkeys you can use in UpSiteDown. Of course, with every Seediffusion program that uses hotkeys, you have the power to modify these hotkeys at any time. These hotkeys are global, meaning they can be used from anywhere within the Windows OS.
 
 *   Windows+Shift+Control+W: get all the websites being monitored.
 *   Windows+Shift+Control+U: get the sites that are up.
@@ -87,6 +87,8 @@ There are 14 hotkeys you can use in UpSiteDown. Of course, with every Seediffusi
 *   Windows+Shift+Control+E: delete outage report file.
 * Windows + Shift + Alt + K: Set your API key for Prowl notifications.
 * Windows + Shift + Alt + L: Toggle Prowl notifications on and off.
+* Windows + Shift + Alt + N (November): Toggle NTFY notifications on and off.
+* Windows + Shift + Alt + M (Mike): Set your ntfy topic and server.
 *   Windows+Shift+Control+Y: restart the program. Useful if your sites or settings files have been modified.
 *   Windows+Shift+Control+X. Kill the program completely.
 
@@ -169,6 +171,30 @@ UpSiteDown uses Prowl's free-to-use API, so you will need an API key for UpSiteD
 2. Launch the app and log in with your Prowl account credentials.
 3. Allow Prowl to send notifications when prompted
 4. You are now ready to receive push notifications to your device via Prowl!
+
+## NTFY
+
+In addition to Prowl, UpSiteDown can also integrate with a free, cross platform, open source and self-hostable push notification service called [NTFY](https://ntfy.sh), pronounced 'notify'.
+NTFY works on iOS, Android and the web. Both the sending API and receiving client applications are free of charge, and anyone is allowed to host their own NTFY server.
+
+### Setting up NTFY with UpSiteDown
+
+1. Launch UpSiteDown if it isn't already running.
+2. Press the NTFY topic hotkey, Windows + Shift + Alt + M (Mike) by default.
+3. In the NTFY topic text box that pops up, enter a topic of your choice. A topic is simply a channel on which notifications are sent and received. Note that NTFY topics are public, meaning anyone who subscribes to that topic can receive notifications on it. Be sure to choose a topic that only you will know and remember.
+4. Another text box will pop up where you can enter the URL of an NTFY server. You can simply leave this field blank to use the default ntfy.sh server. However, if you know of a custom NTFY server, or you're hosting your own, enter its URL here.
+5. Press the NTFY toggle hotkey, Windows + Shift + Alt + N (November) by default, to enable NTFY notifications.
+
+### Subscribing to your topic
+
+1. Download and launch the NTFY app from either the iOS App Store or the Google Play Store.
+2. On iOS, tap the 'Add' button at the top of the screen. On Android, tap the 'Add Subscription' button at the bottom of the screen.
+3. Enter the same topic name as you entered in UpSiteDown.
+4. If you're using a server other than ntfy.sh, check the 'use a custom server' box and enter the address of your NTFY server.
+5. On Android, be sure to check the 'Instant delivery in doze mode' box. This ensures that notifications are received without the app being physically open.
+6. Tap the 'Subscribe' button
+
+You're now all set to receive site status notifications via NTFY!
 
 ## Supporting Seediffusion
 

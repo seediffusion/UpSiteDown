@@ -50,12 +50,17 @@ if not os.path.exists("opts.ini"):
     SetFile.set("exit", "win+shift+control+x")
     SetFile.set("toggle_prowl", "win+shift+alt+l")
     SetFile.set("set_prowl_key", "win+shift+alt+k")
+    SetFile.set("toggle_ntfy", "win+shift+alt+n")
+    SetFile.set("set_ntfy_topic", "win+shift+alt+m")
+    SetFile.set("ntfy_url", "https://ntfy.sh")
     SetFile.set("outmode", "1")
     SetFile.set("sleep", "60")
     SetFile.set("timeout", "15")
     SetFile.set("sounds", "on")
     SetFile.set("prowl", "off")
     SetFile.set("prowl_key", "")
+    SetFile.set("ntfy", "off")
+    SetFile.set("ntfy_topic", "")
     SetFile.save()
 else:
     SetFile = EasySettings("opts.ini")
@@ -78,15 +83,32 @@ else:
         SetFile.setsave("toggle_prowl", "win+shift+alt+l")
     if not SetFile.has_option("set_prowl_key"):
         SetFile.setsave("set_prowl_key", "win+shift+alt+k")
+    if not SetFile.has_option("toggle_ntfy"):
+        SetFile.setsave("toggle_ntfy", "win+shift+alt+n")
+    if not SetFile.has_option("set_ntfy_topic"):
+        SetFile.setsave("set_ntfy_topic", "win+shift+alt+m")
     if not SetFile.has_option("prowl"):
         SetFile.setsave("prowl", "off")
     if not SetFile.has_option("prowl_key"):
         SetFile.setsave("prowl_key", "")
+    if not SetFile.has_option("ntfy"):
+        SetFile.setsave("ntfy", "off")
+    if not SetFile.has_option("ntfy_topic"):
+        SetFile.setsave("ntfy_topic", "")
 if SetFile.get("outmode") == "1":
     out = accessible_output2.outputs.sapi5.SAPI5()
 elif SetFile.get("outmode") == "2" or SetFile.get("outmode") == "3" or SetFile.get("outmode") == "4":
     out = accessible_output2.outputs.auto.Auto()
 p = pyprowl.Prowl(SetFile.get("prowl_key"))
+def send_ntfy(title, message):
+    if SetFile.get("ntfy") == "on":
+        topic = SetFile.get("ntfy_topic").strip()
+        if topic:
+            try:
+                url = SetFile.get("ntfy_url").strip().rstrip("/")
+                requests.post(f"{url}/{topic}", data=message.encode("utf-8"), headers={"Title": title})
+            except Exception:
+                pass
 if not os.path.exists("sites.txt"):
     setsite = wx.GetTextFromUser("Enter a website URL for your sites.txt file, such as www.mysite.com, and press Enter. You can add more sites to this file at any time by pressing " + SetFile.get("view_sites") + ". Leave blank to exit the program.", "First time setup")
     if setsite == "":
@@ -117,6 +139,8 @@ class UpSiteDown(wx.Frame):
         self.hndlr = WXKeyboardHandler(self)
         self.hndlr.register_key(SetFile.get("toggle_prowl"), self.tglprl)
         self.hndlr.register_key(SetFile.get("set_prowl_key"), self.setprl)
+        self.hndlr.register_key(SetFile.get("toggle_ntfy"), self.tglntfy)
+        self.hndlr.register_key(SetFile.get("set_ntfy_topic"), self.setntfy)
         self.hndlr.register_key(SetFile.get("get_sites"), self.getsites)
         self.hndlr.register_key(SetFile.get("toggle_outmode"), self.tglbrl)
         self.hndlr.register_key(SetFile.get("toggle_sounds"), self.tglsnd)
@@ -220,7 +244,7 @@ class UpSiteDown(wx.Frame):
     def upcheck(self):
         global checked
         global NV
-        CV = "2.0.5"
+        CV = "2.1"
         tout("Checking for updates...")
         try:
             response = requests.get("https://api.github.com/repos/seediffusion/UpSiteDown/releases/latest")
@@ -325,6 +349,24 @@ class UpSiteDown(wx.Frame):
         if SetFile.get("prowl") == "on":
             SetFile.setsave("prowl", "off")
             self.tglprl()
+    def tglntfy(self):
+        if SetFile.get("ntfy") == "off":
+            if SetFile.get("ntfy_topic").strip() == "":
+                tout("Set an ntfy topic first.")
+                return
+            SetFile.setsave("ntfy", "on")
+            tout("ntfy on")
+        else:
+            SetFile.setsave("ntfy", "off")
+            tout("ntfy off")
+    def setntfy(self):
+        topic = wx.GetTextFromUser("Enter ntfy topic", "ntfy Topic")
+        SetFile.setsave("ntfy_topic", topic)
+        url = wx.GetTextFromUser("Enter ntfy server URL (default: https://ntfy.sh)", "ntfy Server URL")
+        if url.strip() == "":
+            url = "https://ntfy.sh"
+            SetFile.setsave("ntfy_url", url)
+            tout("ntfy settings saved.")
 def human_readable_downtime(start_time, end_time):
     delta = end_time - start_time
     seconds = delta.total_seconds()
@@ -459,6 +501,11 @@ async def check_websites(file_path, shutdown_event):
                                     p.notify(event = "Site back up", description = f"{friendly_url} is back up after being down for {downtime}.", priority = 0, appName = "UpSiteDown")
                                 except Exception:
                                     pass
+                            if SetFile.get("ntfy") == "on":
+                                try:
+                                    send_ntfy("Site back up", f"{friendly_url} is back up after being down for {downtime}.")
+                                except Exception:
+                                    pass
                             with open("outage.txt", "a") as report:
                                 report.write(f"Service Restored: {end_time.strftime('%A, %d %B, %Y at %I:%M %p')}\n")
                                 report.write(f"Affected site: {url}\n")
@@ -476,6 +523,11 @@ async def check_websites(file_path, shutdown_event):
                             if SetFile.get("prowl") == "on":
                                 try:
                                     p.notify(event = "Site down", description = f"{friendly_url} is down! {e}", priority = 2, appName = "UpSiteDown")
+                                except Exception:
+                                    pass
+                            if SetFile.get("ntfy") == "on":
+                                try:
+                                    send_ntfy("Site down", f"{friendly_url} is down! {e}")
                                 except Exception:
                                     pass
                             downs.add(url)
