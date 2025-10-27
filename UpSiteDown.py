@@ -116,7 +116,7 @@ if SetFile.get("outmode") == "1":
 elif SetFile.get("outmode") == "2" or SetFile.get("outmode") == "3" or SetFile.get("outmode") == "4":
     out = accessible_output2.outputs.auto.Auto()
 p = pyprowl.Prowl(SetFile.get("prowl_key"))
-p2 = PushoverAPI("")
+p2 = PushoverAPI(SetFile.get("app_token"))
 def send_ntfy(title, message):
     if SetFile.get("ntfy") == "on":
         topic = SetFile.get("ntfy_topic").strip()
