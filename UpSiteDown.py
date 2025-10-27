@@ -15,6 +15,7 @@ import accessible_output2.outputs.auto, accessible_output2.outputs.sapi5
 from sound_lib import stream
 from sound_lib import output as o
 from easysettings import EasySettings
+from pushover_complete import PushoverAPI, PushoverCompleteError
 import socket # Added for TCP/IP error handling
 
 if os.path.exists("unzip.exe"):
@@ -53,6 +54,11 @@ if not os.path.exists("opts.ini"):
     SetFile.set("toggle_ntfy", "win+shift+alt+n")
     SetFile.set("set_ntfy_topic", "win+shift+alt+m")
     SetFile.set("ntfy_url", "https://ntfy.sh")
+    SetFile.set("toggle_pushover", "win+shift+alt+u")
+    SetFile.set("set_user_key", "win+shift+alt+i")
+    SetFile.set("user_key", "")
+    SetFile.set("app_token", "")
+    SetFile.set("pushover", "off")
     SetFile.set("outmode", "1")
     SetFile.set("sleep", "60")
     SetFile.set("timeout", "15")
@@ -95,11 +101,22 @@ else:
         SetFile.setsave("ntfy", "off")
     if not SetFile.has_option("ntfy_topic"):
         SetFile.setsave("ntfy_topic", "")
+    if not SetFile.has_option("toggle_pushover"):
+        SetFile.setsave("toggle_pushover", "win+shift+alt+u")
+    if not SetFile.has_option("set_user_key"):
+        SetFile.setsave("set_user_key", "win+shift+alt+i")
+    if not SetFile.has_option("user_key"):
+        SetFile.setsave("user_key", "")
+    if not SetFile.has_option("app_token"):
+        SetFile.setsave("app_token", "")
+    if not SetFile.has_option("pushover"):
+        SetFile.setsave("pushover", "off")
 if SetFile.get("outmode") == "1":
     out = accessible_output2.outputs.sapi5.SAPI5()
 elif SetFile.get("outmode") == "2" or SetFile.get("outmode") == "3" or SetFile.get("outmode") == "4":
     out = accessible_output2.outputs.auto.Auto()
 p = pyprowl.Prowl(SetFile.get("prowl_key"))
+p2 = PushoverAPI("")
 def send_ntfy(title, message):
     if SetFile.get("ntfy") == "on":
         topic = SetFile.get("ntfy_topic").strip()
@@ -109,6 +126,16 @@ def send_ntfy(title, message):
                 requests.post(f"{url}/{topic}", data=message.encode("utf-8"), headers={"Title": title})
             except Exception:
                 pass
+def send_push(key, message, title, priority):
+    if SetFile.get("pushover") == "on":
+        ukey = SetFile.get("user_key").strip()
+        atk = SetFile.get("app_token").strip()
+        if ukey and atk:
+            try:
+                p2.send_message(key, message, title = title, priority = priority)
+            except PushoverCompleteError:
+                pass
+       
 if not os.path.exists("sites.txt"):
     setsite = wx.GetTextFromUser("Enter a website URL for your sites.txt file, such as www.mysite.com, and press Enter. You can add more sites to this file at any time by pressing " + SetFile.get("view_sites") + ". Leave blank to exit the program.", "First time setup")
     if setsite == "":
@@ -141,6 +168,8 @@ class UpSiteDown(wx.Frame):
         self.hndlr.register_key(SetFile.get("set_prowl_key"), self.setprl)
         self.hndlr.register_key(SetFile.get("toggle_ntfy"), self.tglntfy)
         self.hndlr.register_key(SetFile.get("set_ntfy_topic"), self.setntfy)
+        self.hndlr.register_key(SetFile.get("toggle_pushover"), self.tglpsh)
+        self.hndlr.register_key(SetFile.get("set_user_key"), self.setkey)
         self.hndlr.register_key(SetFile.get("get_sites"), self.getsites)
         self.hndlr.register_key(SetFile.get("toggle_outmode"), self.tglbrl)
         self.hndlr.register_key(SetFile.get("toggle_sounds"), self.tglsnd)
@@ -244,7 +273,7 @@ class UpSiteDown(wx.Frame):
     def upcheck(self):
         global checked
         global NV
-        CV = "2.1"
+        CV = "2.2"
         tout("Checking for updates...")
         try:
             response = requests.get("https://api.github.com/repos/seediffusion/UpSiteDown/releases/latest")
@@ -367,6 +396,27 @@ class UpSiteDown(wx.Frame):
             url = "https://ntfy.sh"
             SetFile.setsave("ntfy_url", url)
             tout("ntfy settings saved.")
+    def tglpsh(self):
+        if SetFile.get("pushover") == "off":
+            if SetFile.get("user_key").strip() == "":
+                tout("Set your Pushover user key first.")
+                return
+            elif SetFile.get("app_token").strip() == "":
+                tout("No application token found.")
+                return
+            SetFile.setsave("pushover", "on")
+            tout("Pushover on")
+        elif SetFile.get("pushover") == "on":
+            SetFile.setsave("pushover", "off")
+            tout("Pushover off")
+    def setkey(self):
+        global p2
+        key = wx.GetTextFromUser("Enter your Pushover user key", "User key")
+        SetFile.setsave("user_key", key)
+        tkn = wx.GetTextFromUser("Enter your Pushover application token", "App token")
+        SetFile.setsave("app_token", tkn)
+        p2 = PushoverAPI(SetFile.get("app_token"))
+        tout("Pushover credentials set")
 def human_readable_downtime(start_time, end_time):
     delta = end_time - start_time
     seconds = delta.total_seconds()
@@ -506,6 +556,10 @@ async def check_websites(file_path, shutdown_event):
                                     send_ntfy("Site back up", f"{friendly_url} is back up after being down for {downtime}.")
                                 except Exception:
                                     pass
+                            try:
+                                send_push(SetFile.get("user_key"), f"{friendly_url} is back up after being down for {downtime}.", "Site back up", 0)
+                            except Exception:
+                                pass
                             with open("outage.txt", "a") as report:
                                 report.write(f"Service Restored: {end_time.strftime('%A, %d %B, %Y at %I:%M %p')}\n")
                                 report.write(f"Affected site: {url}\n")
@@ -530,6 +584,10 @@ async def check_websites(file_path, shutdown_event):
                                     send_ntfy("Site down", f"{friendly_url} is down! {e}")
                                 except Exception:
                                     pass
+                            try:
+                                send_push(SetFile.get("user_key"), f"{friendly_url} is down! {e}", "Site down", 1)
+                            except Exception:
+                                pass
                             downs.add(url)
                             ups.remove(url)
                             

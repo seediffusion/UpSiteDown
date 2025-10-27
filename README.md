@@ -54,7 +54,7 @@ python UpSiteDown.py
 
 ### Compiled
 
-The highest version of UpSiteDown is Theakston V 2.1, compiled on Saturday, October 25th, 2025.
+The highest version of UpSiteDown is Theakston V 2.2, compiled on Monday, October 27th, 2025.
 The below link will allow you to download the latest pre-compiled release.
 [UpSiteDownload](https://github.com/seediffusion/UpSiteDown/releases/latest/download/UpSiteDown.zip)
 
@@ -73,7 +73,7 @@ All your program settings are stored inside a file called opts.ini, which is gen
 
 ### Hotkeys
 
-There are 16 hotkeys you can use in UpSiteDown. Of course, with every Seediffusion program that uses hotkeys, you have the power to modify these hotkeys at any time. These hotkeys are global, meaning they can be used from anywhere within the Windows OS.
+There are 18 hotkeys you can use in UpSiteDown. Of course, with every Seediffusion program that uses hotkeys, you have the power to modify these hotkeys at any time. These hotkeys are global, meaning they can be used from anywhere within the Windows OS.
 
 *   Windows+Shift+Control+W: get all the websites being monitored.
 *   Windows+Shift+Control+U: get the sites that are up.
@@ -87,8 +87,10 @@ There are 16 hotkeys you can use in UpSiteDown. Of course, with every Seediffusi
 *   Windows+Shift+Control+E: delete outage report file.
 * Windows + Shift + Alt + K: Set your API key for Prowl notifications.
 * Windows + Shift + Alt + L: Toggle Prowl notifications on and off.
-* Windows + Shift + Alt + N (November): Toggle NTFY notifications on and off.
 * Windows + Shift + Alt + M (Mike): Set your ntfy topic and server.
+* Windows + Shift + Alt + N (November): Toggle NTFY notifications on and off.
+* Windows + Shift + Alt + I: Set your user key and API token for pushover.
+* Windows + Shift + Alt + U. Toggle Pushover notifications on and off.
 *   Windows+Shift+Control+Y: restart the program. Useful if your sites or settings files have been modified.
 *   Windows+Shift+Control+X. Kill the program completely.
 
@@ -195,6 +197,47 @@ NTFY works on iOS, Android and the web. Both the sending API and receiving clien
 6. Tap the 'Subscribe' button
 
 You're now all set to receive site status notifications via NTFY!
+
+
+
+## Pushover
+
+If you don't like the sound of Prowl or NTFY, [Pushover](https://pushover.net) is your third option.
+Like NTFY, Pushover is cross platform, running on both iOS and Android devices. Unlike NTFY, however, it is not free, open source or self-hostable, and is somewhat more involved than both solutions. Pushover's API allows for 10000 calls a month for free, and the receiving apps cost a one-time purchase £4.99 per device platform. This means if you install the app on an iPhone, an iPad and a Samsung Galaxy, that's £9.98, or 2 payments of £4.99.
+
+### Creating a Pushover account
+
+1. Download the Pushover app either iOS or Android.
+2. When you first launch the app, you will be at the account creation screen. Enter your email address and a strong password and click create account.
+3. Click the link in the email sent to your email address to verify your account.
+4. You will be asked to enter a name for the device that will be registered to your account. Enter a memorable name for your device and click add device. You will then have 30 days to try the app and all its features for free.
+
+### Getting your user key and application token
+
+UpSiteDown needs 2 pieces of data to work with Pushover, your user key and an application token. Your user key is linked to your account, but you will need to create an app on the Pushover website to get an application token.
+To find your user key:
+
+1. Go to the [login page on the Pushover website](https://pushover.net/login) and log into your account.
+2. Under the 'Your User Key' heading, focus on the text field with your user key inside it, hit Control A to select all, then Control + C to copy it to the clipboard.
+3. Store it in a text file or a password manager for safe keeping.
+
+To get an application token:
+
+1. Under the 'Your Applications' heading on the Pushover website, click create an application/API token.
+2. Enter a memorable name for your app and an optional description.
+3. Optionally, enter a URL, such as https://github.com/seediffusion/UpSiteDown, for the app.
+4. Check the box to agree to the terms of service and click create application.
+5. On the view application page, focus on the text field with the API token inside it, Control A to select all and Control C to copy.
+6. Store the API token in a text file or password manager for safe keeping.
+
+### Connecting UpSiteDown to Pushover
+
+1. Launch UpSiteDown if it isn't already running.
+2. Use the Pushover user key hotkey, Windows + Shift + Alt + I by default, find your user key and paste it into the textbox that appears and hit Enter.
+3. Find your API token, paste it into the app token textbox and hit Enter.
+4. Use the Pushover toggle hotkey, Windows + Shift + Alt + U by default.
+5. You should now start to receive notifications on your mobile device(s) via Pushover when sites go up and down.
+
 
 ## Supporting Seediffusion
 
